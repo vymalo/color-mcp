@@ -7,17 +7,16 @@ import {ValidationError} from './lib/validation';
 
 import {Svg, SVG} from '@svgdotjs/svg.js';
 import {ColorInput, ColorOutput} from "./lib/color-interfaces";
-import {ResourceTemplate} from "@modelcontextprotocol/sdk/server/mcp.js";
 
 interface AColorInput {
-    hex?: string;
-    rgb?: string;
-    hsl?: string;
-    cmyk?: string;
-    hsv?: string;
-    width?: number;
-    height?: number;
-    named?: boolean;
+    hex?: string | null;
+    rgb?: string | null;
+    hsl?: string | null;
+    cmyk?: string | null;
+    hsv?: string | null;
+    width?: number | null;
+    height?: number | null;
+    named?: boolean | null;
 }
 
 function getColorInput(params: AColorInput) {
@@ -161,7 +160,7 @@ server.tool(
 );
 
 server.tool(
-    "get-schemebox",
+    "get-scheme-box",
     "Get SVG representation of a color scheme",
     {
         hex: z.string().optional().nullable().describe("Hexadecimal color code (e.g., FF0000)"),
@@ -357,19 +356,4 @@ server.tool(
             throw error;
         }
     },
-);
-
-server.registerResource(
-    "greeting",
-    new ResourceTemplate("greeting://{name}", {list: undefined}),
-    {
-        title: "Greeting Resource",      // Display name for UI
-        description: "Dynamic greeting generator"
-    },
-    async (uri, {name}) => ({
-        contents: [{
-            uri: uri.href,
-            text: `Hello, ${name}!`
-        }]
-    })
 );

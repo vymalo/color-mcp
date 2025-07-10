@@ -7,7 +7,6 @@
       ],
       "alwaysAllow": [
         "get-colorbox",
-        "get-schemebox",
         "identify-color",
         "get-color-scheme",
         "get-random-color"
