@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "color": {
+      "command": "node",
+      "args": [
+        "/Users/sse/Developer/color-mcp/build/main.js"
+      ],
+      "alwaysAllow": [
+        "get-colorbox",
+        "get-schemebox",
+        "identify-color",
+        "get-color-scheme",
+        "get-random-color"
+      ]
+    }
+  }
+}

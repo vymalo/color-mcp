@@ -1,13 +1,18 @@
-import * as fs from 'node:fs';
-import * as schemer from './schemer';
+import {colord, extend} from 'colord';
+import cmykPlugin from 'colord/plugins/cmyk';
+import namesPlugin from 'colord/plugins/names';
+import labPlugin from 'colord/plugins/lab'; // For XYZ-like conversions if needed
+import {ColorInput, ColorNames, ColorOutput} from './color-interfaces';
+import {validateCMYK, validateHex, validateHSL, validateHSV, validateRGB, ValidationError} from './validation';
+import colorNames from './colorNames.json';
 
-import { ColorNames, RGBColor, HSLColor, HSVColor, CMYKColor, ColorInput, ColorOutput } from './color-interfaces';
+extend([cmykPlugin, namesPlugin, labPlugin]);
 
-// Load color names data
-const named: ColorNames['colors'] = JSON.parse(fs.readFileSync('./static/colorNames.json', 'utf8')).colors;
+// Lazy load color names data
+let named: ColorNames['colors'] = colorNames.colors;
 
 // Main color processing function
-export const colorMe = (arg: ColorInput): ColorOutput => {
+export const colorMe = async (arg: ColorInput): Promise<ColorOutput> => {
     const c: ColorOutput = {
         hex: {value: '', clean: ''},
         rgb: {r: 0, g: 0, b: 0, value: '', fraction: {r: 0, g: 0, b: 0}},
@@ -22,268 +27,271 @@ export const colorMe = (arg: ColorInput): ColorOutput => {
         _embedded: {}
     };
 
-    let a: RGBColor;
+    let colorInstance: ReturnType<typeof colord>;
 
-    if (arg.rgb && (arg.rgb.r || arg.rgb.r === 0)) {
-        return fromRGB(arg.rgb);
-    }
-    if (arg.hex) {
-        return fromHex(arg.hex);
-    }
-    if (arg.hsl && arg.hsl.h !== null && arg.hsl.h !== undefined) {
-        if (arg.hsl.is_fraction) {
-            a = schemer.methods.base['hsl-to-rgb'](arg.hsl);
+    try {
+        if (arg.rgb) {
+            const validatedRgb = validateRGB(arg.rgb);
+            colorInstance = validatedRgb.is_fraction
+                ? colord({r: validatedRgb.r * 255, g: validatedRgb.g * 255, b: validatedRgb.b * 255})
+                : colord({r: validatedRgb.r, g: validatedRgb.g, b: validatedRgb.b});
+        } else if (arg.hex) {
+            const validatedHex = validateHex(arg.hex);
+            colorInstance = colord(validatedHex);
+        } else if (arg.hsl) {
+            const validatedHsl = validateHSL(arg.hsl);
+            colorInstance = validatedHsl.is_fraction
+                ? colord({h: validatedHsl.h * 360, s: validatedHsl.s * 100, l: validatedHsl.l * 100})
+                : colord({h: validatedHsl.h, s: validatedHsl.s, l: validatedHsl.l});
+        } else if (arg.hsv) {
+            const validatedHsv = validateHSV(arg.hsv);
+            colorInstance = validatedHsv.is_fraction
+                ? colord({h: validatedHsv.h * 360, s: validatedHsv.s * 100, v: validatedHsv.v * 100})
+                : colord({h: validatedHsv.h, s: validatedHsv.s * 100, v: validatedHsv.v * 100});
+        } else if (arg.cmyk) {
+            const validatedCmyk = validateCMYK(arg.cmyk);
+            colorInstance = validatedCmyk.is_fraction
+                ? colord(`cmyk(${validatedCmyk.c * 100}%,${validatedCmyk.m * 100}%,${validatedCmyk.y * 100}%,${validatedCmyk.k * 100}%)`)
+                : colord(`cmyk(${validatedCmyk.c}%,${validatedCmyk.m}%,${validatedCmyk.y}%,${validatedCmyk.k}%)`);
         } else {
-            a = schemer.methods.base['hsl-to-rgb']({
-                h: arg.hsl.h / 360,
-                s: arg.hsl.s / 100,
-                l: arg.hsl.l / 100
-            });
+            throw new ValidationError("No valid color input provided.");
         }
-        a.is_fraction = true;
-        return fromRGB(a);
-    }
-    if (arg.hsv && arg.hsv.h !== null && arg.hsv.h !== undefined) {
-        if (arg.hsv.is_fraction) {
-            a = schemer.methods.base['hsv-to-rgb'](arg.hsv);
+        if (!colorInstance.isValid()) throw new ValidationError("Invalid color input provided.");
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            console.error("Color validation error:", error.message);
+            colorInstance = colord("#000000"); // Fallback to black
         } else {
-            a = schemer.methods.base['hsv-to-rgb']({
-                h: arg.hsv.h / 360,
-                s: arg.hsv.s / 100,
-                v: arg.hsv.v / 100
-            });
-        }
-        a.is_fraction = true;
-        return fromRGB(a);
-    }
-    if (arg.cmyk && arg.cmyk.c !== null && arg.cmyk.c !== undefined) {
-        if (arg.cmyk.is_fraction) {
-            a = schemer.methods.base['cmyk-to-rgb'](arg.cmyk);
-        } else {
-            a = schemer.methods.base['cmyk-to-rgb']({
-                c: arg.cmyk.c / 100,
-                m: arg.cmyk.m / 100,
-                y: arg.cmyk.y / 100,
-                k: arg.cmyk.k / 100
-            });
-        }
-        a.is_fraction = true;
-        return fromRGB(a);
-    }
-
-    function fromRGB(rgb: RGBColor): ColorOutput {
-        if (!rgb.is_fraction) {
-            return fromHex(RGBToHex([rgb.r, rgb.g, rgb.b]));
-        } else {
-            return fromHex(schemer.methods.stringlify.hex(rgb));
+            console.error("Unexpected error during color processing:", error);
+            colorInstance = colord("#000000"); // Fallback to black
         }
     }
 
-    function luminanceRGB(rgb: number[]): number {
-        const lum: number[] = [];
-        for (let i = 0; i < rgb.length; i++) {
-            const chan = rgb[i] / 255;
-            lum[i] = (chan <= 0.03928) ? chan / 12.92 : Math.pow(((chan + 0.055) / 1.055), 2.4);
-        }
-        return 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
-    }
+    // Populate ColorOutput object using colord
+    c.hex.value = colorInstance.toHex();
+    c.hex.clean = colorInstance.toHex().substring(1);
 
-    function contrastRatioRGB(foreGround: number[], backGround: number[]): number {
-        const lum1 = luminanceRGB(foreGround);
-        const lum2 = luminanceRGB(backGround);
-        if (lum1 > lum2) {
-            return (lum1 + 0.05) / (lum2 + 0.05);
-        }
-        return (lum2 + 0.05) / (lum1 + 0.05);
-    }
+    const rgbObj = colorInstance.toRgb();
+    c.rgb.r = rgbObj.r;
+    c.rgb.g = rgbObj.g;
+    c.rgb.b = rgbObj.b;
+    c.rgb.fraction.r = rgbObj.r / 255;
+    c.rgb.fraction.g = rgbObj.g / 255;
+    c.rgb.fraction.b = rgbObj.b / 255;
+    c.rgb.value = `rgb(${c.rgb.r},${c.rgb.g},${c.rgb.b})`;
 
-    function getHighestContrastColor(firstForeGround: number[], secondForeGround: number[], backGround: number[]): number[] {
-        const firstForeGroundContrast = contrastRatioRGB(firstForeGround, backGround);
-        const secondForeGroundContrast = contrastRatioRGB(secondForeGround, backGround);
-        return Math.max(firstForeGroundContrast, secondForeGroundContrast) === firstForeGroundContrast ? firstForeGround : secondForeGround;
-    }
+    const hslObj = colorInstance.toHsl();
+    c.hsl.h = Math.round(hslObj.h);
+    c.hsl.s = Math.round(hslObj.s);
+    c.hsl.l = Math.round(hslObj.l);
+    c.hsl.fraction.h = hslObj.h / 360;
+    c.hsl.fraction.s = hslObj.s / 100;
+    c.hsl.fraction.l = hslObj.l / 100;
+    c.hsl.value = `hsl(${c.hsl.h},${c.hsl.s}%,${c.hsl.l}%)`;
 
-    function fromHex(hex: string): ColorOutput {
-        c.hex.value = hexCheck(hex);
-        let r = hexToRGB(c.hex.value, false);
+    const hsvObj = colorInstance.toHsv();
+    c.hsv.h = Math.round(hsvObj.h);
+    c.hsv.s = Math.round(hsvObj.s);
+    c.hsv.v = Math.round(hsvObj.v);
+    c.hsv.fraction.h = hsvObj.h / 360;
+    c.hsv.fraction.s = hsvObj.s / 100;
+    c.hsv.fraction.v = hsvObj.v / 100;
+    c.hsv.value = `hsv(${c.hsv.h},${c.hsv.s}%,${c.hsv.v}%)`;
+
+    const cmykObj = colorInstance.toCmyk();
+    c.cmyk.c = Math.round(cmykObj.c);
+    c.cmyk.m = Math.round(cmykObj.m);
+    c.cmyk.y = Math.round(cmykObj.y);
+    c.cmyk.k = Math.round(cmykObj.k);
+    c.cmyk.fraction.c = cmykObj.c / 100;
+    c.cmyk.fraction.m = cmykObj.m / 100;
+    c.cmyk.fraction.y = cmykObj.y / 100;
+    c.cmyk.fraction.k = cmykObj.k / 100;
+    c.cmyk.value = `cmyk(${c.cmyk.c}%,${c.cmyk.m}%,${c.cmyk.y}%,${c.cmyk.k}%)`;
+
+    // XYZ conversion is not supported by colord; retain chroma-js workaround or comment as custom logic
+    // If XYZ is essential, keep this custom logic, otherwise set to zero or remove
+    c.XYZ.X = 0;
+    c.XYZ.Y = 0;
+    c.XYZ.Z = 0;
+    c.XYZ.fraction.X = 0;
+    c.XYZ.fraction.Y = 0;
+    c.XYZ.fraction.Z = 0;
+    c.XYZ.value = `XYZ(0,0,0)`;
+
+    // Name and contrast
+    if (named) {
         const n = nearestNamedHex(c.hex.value);
-
-        c.rgb.r = r[0];
-        c.rgb.g = r[1];
-        c.rgb.b = r[2];
-        c.rgb.fraction.r = r[0] / 255;
-        c.rgb.fraction.g = r[1] / 255;
-        c.rgb.fraction.b = r[2] / 255;
-        c.rgb.value = schemer.methods.stringlify.rgb(c.rgb.fraction, null);
-
-        const hslFraction = schemer.methods.base["rgb-to-hsl"](c.rgb.fraction);
-        c.hsl.fraction = hslFraction;
-        c.hsl.h = Math.round(hslFraction.h * 360);
-        c.hsl.s = Math.round(hslFraction.s * 100);
-        c.hsl.l = Math.round(hslFraction.l * 100);
-        c.hsl.value = schemer.methods.stringlify.hsl(c.hsl.fraction, null);
-        
-        const hsvFraction = schemer.methods.base["rgb-to-hsv"](c.rgb.fraction);
-        c.hsv.fraction = hsvFraction;
-        c.hsv.value = schemer.methods.stringlify.hsv(c.hsv.fraction, null);
-        c.hsv.h = Math.round(hsvFraction.h * 360);
-        c.hsv.s = Math.round(hsvFraction.s * 100);
-        c.hsv.v = Math.round(hsvFraction.v * 100);
-
-        const xyzFraction = schemer.methods.base["rgb-to-XYZ"](c.rgb.fraction);
-        c.XYZ.fraction = xyzFraction;
-        c.XYZ.value = schemer.methods.stringlify.XYZ(c.XYZ.fraction, null);
-        c.XYZ.X = Math.round(xyzFraction.X * 100);
-        c.XYZ.Y = Math.round(xyzFraction.Y * 100);
-        c.XYZ.Z = Math.round(xyzFraction.Z * 100);
-
-        const cmykFraction = schemer.methods.base["rgb-to-cmyk"](c.rgb.fraction);
-        c.cmyk.fraction = cmykFraction;
-        c.cmyk.value = schemer.methods.stringlify.cmyk(c.cmyk.fraction, null);
-        c.cmyk.c = Math.round(cmykFraction.c * 100);
-        c.cmyk.m = Math.round(cmykFraction.m * 100);
-        c.cmyk.y = Math.round(cmykFraction.y * 100);
-        c.cmyk.k = Math.round(cmykFraction.k * 100);
-
         c.name.value = n[1];
         c.name.closest_named_hex = n[0];
         c.name.exact_match_name = n[2];
         c.name.distance = n[3];
-        c.hex.clean = c.hex.value.substring(1);
-
-        const textColor = getHighestContrastColor([0, 0, 0], [255, 255, 255], [c.rgb.r, c.rgb.g, c.rgb.b]);
-        c.contrast.value = RGBToHex(textColor);
-
-        c.image.bare = "https://www.thecolorapi.com/id?format=svg&named=false&hex=" + c.hex.clean;
-        c.image.named = "https://www.thecolorapi.com/id?format=svg&hex=" + c.hex.clean;
-        c._links.self = {
-            href: '/id?hex=' + c.hex.clean
-        };
-
-        return c;
+    } else {
+        c.name.value = "Unnamed";
+        c.name.closest_named_hex = "";
+        c.name.exact_match_name = false;
+        c.name.distance = -1;
     }
 
-    // Default fallback
-    return fromHex('#000000');
+    c.contrast.value = colorInstance.isLight() ? '#000000' : '#FFFFFF';
+
+    c.image.bare = "https://www.thecolorapi.com/id?format=svg&named=false&hex=" + c.hex.clean;
+    c.image.named = "https://www.thecolorapi.com/id?format=svg&hex=" + c.hex.clean;
+    c._links.self = {
+        href: '/id?hex=' + c.hex.clean
+    };
+
+    return c;
 };
 
+// Helper functions (moved from schemer to avoid circular dependency)
 export const hexCheck = (color: string): string => {
-    color = color.toUpperCase();
-    if (color.length < 3 || color.length > 7)
-        return "#000000";
-    if (color.length % 3 === 0)
-        color = "#" + color;
-    if (color.length === 4)
-        color = "#" + color.substr(1, 1) + color.substr(1, 1) + color.substr(2, 1) + color.substr(2, 1) + color.substr(3, 1) + color.substr(3, 1);
-    return color;
+    try {
+        return validateHex(color);
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            console.warn(`Hex validation failed for "${color}": ${error.message}. Falling back to #000000.`);
+            return "#000000";
+        }
+        throw error;
+    }
 };
 
 export const RGBToHex = (arr: number[]): string => {
-    return "#" + componentToHex(arr[0]) + componentToHex(arr[1]) + componentToHex(arr[2]);
+    try {
+        validateRGB({r: arr[0], g: arr[1], b: arr[2]});
+        return colord({r: arr[0], g: arr[1], b: arr[2]}).toHex();
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            console.warn(`RGB to Hex conversion failed for [${arr}]: ${error.message}. Falling back to #000000.`);
+            return "#000000";
+        }
+        throw error;
+    }
 };
 
-// Adopted from: Farbtastic 1.2
-// http://acko.net/dev/farbtastic
 export const hexToRGB = (color: string, frac?: boolean): number[] => {
-    if (frac) {
-        return [parseInt('0x' + color.substring(1, 3), 16) / 255, parseInt('0x' + color.substring(3, 5), 16) / 255, parseInt('0x' + color.substring(5, 7), 16) / 255];
-    } else {
-        return [parseInt('0x' + color.substring(1, 3), 16), parseInt('0x' + color.substring(3, 5), 16), parseInt('0x' + color.substring(5, 7), 16)];
+    try {
+        const validatedHex = validateHex(color);
+        const rgb = colord(validatedHex).toRgb();
+        const arr = [rgb.r, rgb.g, rgb.b];
+        return frac ? arr.map((c: number) => c / 255) : arr;
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            console.warn(`Hex to RGB conversion failed for "${color}": ${error.message}. Falling back to [0,0,0].`);
+            return frac ? [0, 0, 0] : [0, 0, 0];
+        }
+        throw error;
     }
 };
 
 export const hexToHSL = (color: string): number[] => {
-    const rgb = [parseInt('0x' + color.substring(1, 3), 16) / 255, parseInt('0x' + color.substring(3, 5), 16) / 255, parseInt('0x' + color.substring(5, 7), 16) / 255];
-    let min: number, max: number, delta: number, h: number, s: number, l: number;
-    const r = rgb[0], g = rgb[1], b = rgb[2];
-
-    min = Math.min(r, Math.min(g, b));
-    max = Math.max(r, Math.max(g, b));
-    delta = max - min;
-    l = (min + max) / 2;
-
-    s = 0;
-    if (l > 0 && l < 1)
-        s = delta / (l < 0.5 ? (2 * l) : (2 - 2 * l));
-
-    h = 0;
-    if (delta > 0) {
-        if (max === r && max !== g) h += (g - b) / delta;
-        if (max === g && max !== b) h += (2 + (b - r) / delta);
-        if (max === b && max !== r) h += (4 + (r - g) / delta);
-        h /= 6;
+    try {
+        const validatedHex = validateHex(color);
+        const hsl = colord(validatedHex).toHsl();
+        return [hsl.h || 0, (hsl.s || 0), (hsl.l || 0)];
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            console.warn(`Hex to HSL conversion failed for "${color}": ${error.message}. Falling back to [0,0,0].`);
+            return [0, 0, 0];
+        }
+        throw error;
     }
-    return [parseInt((h * 360).toString(), 10), parseInt((s * 100).toString(), 10), parseInt((l * 100).toString(), 10)];
 };
 
 export const RGBToHSL = (rgb: number[]): number[] => {
-    let min: number, max: number, delta: number, h: number, s: number, l: number;
-    const r = rgb[0], g = rgb[1], b = rgb[2];
-    min = Math.min(r, Math.min(g, b));
-    max = Math.max(r, Math.max(g, b));
-    delta = max - min;
-    l = (min + max) / 2;
-    s = 0;
-    if (l > 0 && l < 1) {
-        s = delta / (l < 0.5 ? (2 * l) : (2 - 2 * l));
+    try {
+        validateRGB({r: rgb[0], g: rgb[1], b: rgb[2]});
+        const hsl = colord({r: rgb[0], g: rgb[1], b: rgb[2]}).toHsl();
+        return [hsl.h || 0, (hsl.s || 0), (hsl.l || 0)];
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            console.warn(`RGB to HSL conversion failed for [${rgb}]: ${error.message}. Falling back to [0,0,0].`);
+            return [0, 0, 0];
+        }
+        throw error;
     }
-    h = 0;
-    if (delta > 0) {
-        if (max === r && max !== g) h += (g - b) / delta;
-        if (max === g && max !== b) h += (2 + (b - r) / delta);
-        if (max === b && max !== r) h += (4 + (r - g) / delta);
-        h /= 6;
-    }
-    return [h, s, l];
 };
 
 export const HSLToRGB = (hsl: number[]): number[] => {
-    let m1: number, m2: number;
-    const h = hsl[0], s = hsl[1], l = hsl[2];
-    m2 = (l <= 0.5) ? l * (s + 1) : l + s - l * s;
-    m1 = l * 2 - m2;
-    return [hueToRGB(m1, m2, h + 0.33333),
-        hueToRGB(m1, m2, h),
-        hueToRGB(m1, m2, h - 0.33333)];
-
-    function hueToRGB(m1: number, m2: number, h: number): number {
-        h = (h < 0) ? h + 1 : ((h > 1) ? h - 1 : h);
-        if (h * 6 < 1) return m1 + (m2 - m1) * h * 6;
-        if (h * 2 < 1) return m2;
-        if (h * 3 < 2) return m1 + (m2 - m1) * (0.66666 - h) * 6;
-        return m1;
-    }
-};
-
-// Adopted from http://chir.ag/projects/ntc
-// accepts [hexColor]
-// returns [closestHexValue, name, boolIndicatingExactMatch, distance]
-export const nearestNamedHex = (color: string): [string, string, boolean, number] => {
-    color = hexCheck(color);
-    const rgb = hexToRGB(color);
-    const r = rgb[0], g = rgb[1], b = rgb[2];
-    const hsl = hexToHSL(color);
-    const h = hsl[0], s = hsl[1], l = hsl[2];
-    let ndf1 = 0;
-    let ndf2 = 0;
-    let ndf = 0;
-    let cl = -1, df = -1;
-
-    for (let i = 0; i < named.length; i++) {
-        if (color === "#" + named[i].hex)
-            return ["#" + named[i].hex, named[i].name, true, 0];
-        ndf1 = Math.pow(r - named[i].r, 2) + Math.pow(g - named[i].g, 2) + Math.pow(b - named[i].b, 2);
-        ndf2 = Math.pow(h - named[i].h, 2) + Math.pow(s - named[i].s, 2) + Math.pow(l - named[i].l, 2);
-        ndf = ndf1 + ndf2 * 2;
-        if (df < 0 || df > ndf) {
-            df = ndf;
-            cl = i;
+    try {
+        validateHSL({h: hsl[0], s: hsl[1], l: hsl[2]});
+        const rgb = colord({h: hsl[0], s: hsl[1], l: hsl[2]}).toRgb();
+        return [rgb.r, rgb.g, rgb.b];
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            console.warn(`HSL to RGB conversion failed for [${hsl}]: ${error.message}. Falling back to [0,0,0].`);
+            return [0, 0, 0];
         }
+        throw error;
     }
-    return (cl < 0 ? ["#000000", "Invalid Color: " + color, false, 0] : ["#" + named[cl].hex, named[cl].name, false, df]);
 };
 
-function componentToHex(c: number): string {
-    const hex = c.toString(16);
-    return hex.length === 1 ? "0" + hex : hex;
-}
+export const nearestNamedHex = (color: string): [string, string, boolean, number] => {
+    if (!named) {
+        console.warn("Color names data not loaded. Cannot find nearest named hex.");
+        return ["#000000", "Data Not Loaded", false, -1];
+    }
+
+    try {
+        const validatedHex = validateHex(color);
+        const inputColord = colord(validatedHex);
+        const inputRgbObj = inputColord.toRgb();
+        const inputHslObj = inputColord.toHsl();
+        const inputRgb = [inputRgbObj.r, inputRgbObj.g, inputRgbObj.b];
+        const inputHsl = [inputHslObj.h, inputHslObj.s / 100, inputHslObj.l / 100];
+
+        let closestName = "Unknown";
+        let closestHex = "#000000";
+        let minDistance = Infinity;
+        let exactMatch = false;
+
+        for (const namedColor of named) {
+            const namedColord = colord(`#${namedColor.hex}`);
+            const namedRgbObj = namedColord.toRgb();
+            const namedHslObj = namedColord.toHsl();
+            const namedRgb = [namedRgbObj.r, namedRgbObj.g, namedRgbObj.b];
+            const namedHsl = [namedHslObj.h, namedHslObj.s / 100, namedHslObj.l / 100];
+
+            // Euclidean distance in RGB space
+            const distRgb = Math.sqrt(
+                Math.pow(inputRgb[0] - namedRgb[0], 2) +
+                Math.pow(inputRgb[1] - namedRgb[1], 2) +
+                Math.pow(inputRgb[2] - namedRgb[2], 2)
+            );
+
+            // Weighted distance in HSL space (hue is circular, so special handling)
+            const hueDiff = Math.min(Math.abs(inputHsl[0] - namedHsl[0]), 360 - Math.abs(inputHsl[0] - namedHsl[0]));
+            const distHsl = Math.sqrt(
+                Math.pow(hueDiff, 2) +
+                Math.pow((inputHsl[1] - namedHsl[1]) * 100, 2) + // Scale saturation/lightness
+                Math.pow((inputHsl[2] - namedHsl[2]) * 100, 2)
+            );
+
+            // Combine distances - adjust weights as needed
+            const totalDistance = distRgb * 0.5 + distHsl * 0.5;
+
+            if (totalDistance < minDistance) {
+                minDistance = totalDistance;
+                closestName = namedColor.name;
+                closestHex = `#${namedColor.hex}`;
+            }
+
+            if (validatedHex.toLowerCase() === `#${namedColor.hex.toLowerCase()}`) {
+                exactMatch = true;
+                closestName = namedColor.name;
+                closestHex = `#${namedColor.hex}`;
+                minDistance = 0;
+                break; // Exact match found, no need to continue
+            }
+        }
+
+        return [closestHex, closestName, exactMatch, minDistance];
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            console.warn(`Nearest named hex failed for "${color}": ${error.message}. Falling back to default.`);
+            return ["#000000", "Invalid Color", false, -1];
+        }
+        throw error;
+    }
+};

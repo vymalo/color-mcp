@@ -1,4 +1,4 @@
-import { ColorOutput } from './colored';
+import {ColorOutput} from './color-interfaces';
 
 // Type definitions for color bounds
 interface ColorBound {
@@ -21,7 +21,7 @@ interface AllColorBounds {
     XYZ: ColorBounds;
     Yxy: ColorBounds;
     lab: ColorBounds;
-    validate: (type: string, values: any, factorize?: boolean) => any;
+    validate: (type: keyof typeof methods.bounds, values: any, factorize?: boolean) => any;
 }
 
 // Type definitions for color values
@@ -133,7 +133,6 @@ interface SchemeConfig {
 }
 
 interface SchemeDefinitions {
-    [key: string]: SchemeConfig[];
     monochrome: SchemeConfig[];
     'monochrome-light': SchemeConfig[];
     'monochrome-dark': SchemeConfig[];
@@ -146,7 +145,7 @@ interface SchemeDefinitions {
 }
 
 // Type definitions for scheme result
-interface SchemeResult {
+export interface SchemeResult {
     mode: string;
     count: number;
     colors: ColorOutput[];
@@ -368,13 +367,13 @@ export const methods: SchemerMethods = {
                 f: 100
             }
         },
-        validate: function (type: string, values: ColorValues, factorize: boolean = false): ColorValues {
+        validate: function (type: keyof typeof methods.bounds, values: ColorValues, factorize: boolean = false): ColorValues {
             const result: ColorValues = {};
             const bounds = methods.bounds[type] as ColorBounds;
 
             for (const key in bounds) {
                 const b = bounds[key];
-                if (factorize === true) {
+                if (factorize) {
                     result[key] = Math.max(b.min * b.f, Math.min(b.max * b.f, Math.round(values[key] * b.f)));
                 } else {
                     result[key] = Math.max(b.min, Math.min(b.max, values[key]));
@@ -714,7 +713,6 @@ export const methods: SchemerMethods = {
             });
         },
         "rgb-to-lab": function (values: RGBValues): LabValues {
-            const rgb = methods.bounds.validate("rgb", values) as RGBValues;
             const XYZ = methods.base["rgb-to-XYZ"](values);
             let X = XYZ.X / methods.bounds.XYZ.X.max;
             let Y = XYZ.Y / methods.bounds.XYZ.Y.max;
@@ -742,7 +740,7 @@ export const methods: SchemerMethods = {
                 ot = "<" + tag + ">";
                 ct = "</" + tag + ">";
             }
-            return str.replace(/\[/g, ot).replace(/\]/g, ct);
+            return str.replace(/\[/g, ot).replace(/]/g, ct);
         },
         rgb: function (values: RGBValues, tag: string | null = null): string {
             const rgb = methods.bounds.validate("rgb", values, true) as RGBValues;

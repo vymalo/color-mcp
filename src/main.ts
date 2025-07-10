@@ -3,8 +3,9 @@ import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
 
 async function main() {
     const transport = new StdioServerTransport();
+    await import('./tools');
     await server.connect(transport);
-    console.error("Color MCP Server running on stdio");
+    console.log("Color MCP Server running on stdio");
 }
 
 main().catch((error) => {

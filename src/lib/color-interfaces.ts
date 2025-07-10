@@ -1,5 +1,3 @@
-import * as fs from 'node:fs';
-
 export interface ColorNames {
     colors: Array<{
         name: string;
