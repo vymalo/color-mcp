@@ -1,0 +1,20 @@
+{
+  "$schema": "https://swc.rs/schema.json",
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "root": "src",
+      "sourceMaps": true,
+      "decorators": true
+    },
+    "transform": {
+      "decoratorMetadata": true
+    },
+    "target": "esnext"
+  },
+  "module": {
+    "type": "commonjs",
+    "strict": true
+  },
+  "minify": false
+}
