@@ -1,5 +1,5 @@
 {
-  "name": "color-mcp",
+  "name": "@vymalo/color-mcp",
   "version": "1.0.0",
   "description": "A comprehensive color manipulation and scheme generation library.",
   "keywords": [

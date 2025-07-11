@@ -1962,6 +1962,35 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vymalo/color-mcp@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@vymalo/color-mcp@workspace:."
+  dependencies:
+    "@biomejs/biome": "npm:^2.1.1"
+    "@changesets/cli": "npm:^2.29.5"
+    "@modelcontextprotocol/inspector": "npm:^0.16.1"
+    "@modelcontextprotocol/sdk": "npm:^1.15.0"
+    "@swc/cli": "npm:^0.7.8"
+    "@swc/core": "npm:^1.12.11"
+    "@types/lodash": "npm:^4.17.20"
+    "@types/node": "npm:^24.0.12"
+    "@types/seedrandom": "npm:^3.0.8"
+    chokidar: "npm:^4.0.3"
+    color-blind: "npm:^0.1.3"
+    colord: "npm:^2.9.3"
+    concurrently: "npm:^9.2.0"
+    husky: "npm:^9.1.7"
+    lint-staged: "npm:^16.1.2"
+    lodash: "npm:^4.17.21"
+    nanoid: "npm:^5.1.5"
+    node-vibrant: "npm:^4.0.3"
+    rimraf: "npm:^6.0.1"
+    seedrandom: "npm:^3.0.5"
+    typescript: "npm:^5.8.3"
+    zod: "npm:3"
+  languageName: unknown
+  linkType: soft
+
 "@xhmikosr/archive-type@npm:^7.0.0":
   version: 7.0.0
   resolution: "@xhmikosr/archive-type@npm:7.0.0"
@@ -2541,35 +2570,6 @@ __metadata:
   checksum: 10c0/37e1150172f2e311fe1b2df62c6293a342ee7380da7b9cfdba67ea539909afbd74da27033208d01d6d5cfc65ee7868a22e18d7e7648e004425441c0f8a15a7d7
   languageName: node
   linkType: hard
-
-"color-mcp@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "color-mcp@workspace:."
-  dependencies:
-    "@biomejs/biome": "npm:^2.1.1"
-    "@changesets/cli": "npm:^2.29.5"
-    "@modelcontextprotocol/inspector": "npm:^0.16.1"
-    "@modelcontextprotocol/sdk": "npm:^1.15.0"
-    "@swc/cli": "npm:^0.7.8"
-    "@swc/core": "npm:^1.12.11"
-    "@types/lodash": "npm:^4.17.20"
-    "@types/node": "npm:^24.0.12"
-    "@types/seedrandom": "npm:^3.0.8"
-    chokidar: "npm:^4.0.3"
-    color-blind: "npm:^0.1.3"
-    colord: "npm:^2.9.3"
-    concurrently: "npm:^9.2.0"
-    husky: "npm:^9.1.7"
-    lint-staged: "npm:^16.1.2"
-    lodash: "npm:^4.17.21"
-    nanoid: "npm:^5.1.5"
-    node-vibrant: "npm:^4.0.3"
-    rimraf: "npm:^6.0.1"
-    seedrandom: "npm:^3.0.5"
-    typescript: "npm:^5.8.3"
-    zod: "npm:3"
-  languageName: unknown
-  linkType: soft
 
 "color-name@npm:~1.1.4":
   version: 1.1.4
