@@ -1,6 +1,6 @@
 {
   "name": "@vymalo/color-mcp",
-  "version": "1.0.0",
+  "version": "1.0.7",
   "description": "A comprehensive color manipulation and scheme generation library.",
   "keywords": [
     "color",
@@ -16,10 +16,10 @@
     "email": "selastlambou@gmail.com",
     "name": "Stephane Segning"
   },
-  "main": "dist/main.js",
-  "types": "dist/main.d.ts",
+  "main": "build/main.js",
+  "types": "build/main.d.ts",
   "files": [
-    "dist",
+    "build",
     "bin"
   ],
   "repository": {
@@ -29,7 +29,7 @@
   "scripts": {
     "format": "biome check --write ./src",
     "start": "node build/main.js",
-    "clean": "rimraf dist",
+    "clean": "rimraf build",
     "build:swc": "swc --config-file .swcrc.json src -d build --strip-leading-paths --copy-files",
     "build:types": "tsc --project tsconfig.json",
     "build": "npm run clean && npm run build:types && npm run format && npm run build:swc",
