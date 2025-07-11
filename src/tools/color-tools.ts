@@ -13,7 +13,7 @@ export function registerColorTools() {
         'Sets the alpha (opacity) of a color.',
         setColorAlphaSchema.shape,
         async ({color, value}: z.infer<typeof setColorAlphaSchema>) => {
-            const result = colord(color).alpha(value).toRgbString();
+            const result = colord(color).alpha(value).toHex();
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -28,7 +28,7 @@ export function registerColorTools() {
         'Inverts the color.',
         invertColorSchema.shape,
         async ({color}: z.infer<typeof invertColorSchema>) => {
-            const result = colord(color).invert().toRgbString();
+            const result = colord(color).invert().toHex();
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -44,7 +44,7 @@ export function registerColorTools() {
         'Saturates the color by a given amount.',
         saturateColorSchema.shape,
         async ({color, amount}: z.infer<typeof saturateColorSchema>) => {
-            const result = colord(color).saturate(amount).toRgbString();
+            const result = colord(color).saturate(amount).toHex();
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -60,7 +60,7 @@ export function registerColorTools() {
         'Desaturates the color by a given amount.',
         desaturateColorSchema.shape,
         async ({color, amount}: z.infer<typeof desaturateColorSchema>) => {
-            const result = colord(color).desaturate(amount).toRgbString();
+            const result = colord(color).desaturate(amount).toHex();
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -75,7 +75,7 @@ export function registerColorTools() {
         'Converts the color to grayscale.',
         grayscaleColorSchema.shape,
         async ({color}: z.infer<typeof grayscaleColorSchema>) => {
-            const result = colord(color).grayscale().toRgbString();
+            const result = colord(color).grayscale().toHex();
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -91,7 +91,7 @@ export function registerColorTools() {
         'Lightens the color by a given amount.',
         lightenColorSchema.shape,
         async ({color, amount}: z.infer<typeof lightenColorSchema>) => {
-            const result = colord(color).lighten(amount).toRgbString();
+            const result = colord(color).lighten(amount).toHex();
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -107,7 +107,7 @@ export function registerColorTools() {
         'Darkens the color by a given amount.',
         darkenColorSchema.shape,
         async ({color, amount}: z.infer<typeof darkenColorSchema>) => {
-            const result = colord(color).darken(amount).toRgbString();
+            const result = colord(color).darken(amount).toHex();
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -157,7 +157,7 @@ export function registerColorTools() {
         'Mixes two colors together.',
         mixColorsSchema.shape,
         async ({color1, color2, ratio}: z.infer<typeof mixColorsSchema>) => {
-            const result = colord(color1).mix(color2, ratio).toRgbString();
+            const result = colord(color1).mix(color2, ratio).toHex();
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -173,7 +173,7 @@ export function registerColorTools() {
         'Generates tints of a color.',
         generateTintsSchema.shape,
         async ({color, count}: z.infer<typeof generateTintsSchema>) => {
-            const result = colord(color).tints(count).map((c) => c.toRgbString());
+            const result = colord(color).tints(count).map((c) => c.toHex());
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -189,7 +189,7 @@ export function registerColorTools() {
         'Generates shades of a color.',
         generateShadesSchema.shape,
         async ({color, count}: z.infer<typeof generateShadesSchema>) => {
-            const result = colord(color).shades(count).map((c) => c.toRgbString());
+            const result = colord(color).shades(count).map((c) => c.toHex());
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -205,7 +205,7 @@ export function registerColorTools() {
         'Generates tones of a color.',
         generateTonesSchema.shape,
         async ({color, count}: z.infer<typeof generateTonesSchema>) => {
-            const result = colord(color).tones(count).map((c) => c.toRgbString());
+            const result = colord(color).tones(count).map((c) => c.toHex());
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
@@ -224,7 +224,7 @@ export function registerColorTools() {
         'Generates color harmonies based on a given type.',
         generateColorHarmoniesSchema.shape,
         async ({color, type}: z.infer<typeof generateColorHarmoniesSchema>) => {
-            const result = colord(color).harmonies(type).map((c) => c.toRgbString());
+            const result = colord(color).harmonies(type).map((c) => c.toHex());
             return {
                 content: [{type: 'text', text: JSON.stringify(result, null, 2)}],
             };
