@@ -9,8 +9,10 @@
         "get-colorbox",
         "identify-color",
         "get-color-scheme",
-        "get-random-color"
-      ]
+        "get-random-color",
+        "get-scheme-box"
+      ],
+      "disabled": true
     }
   }
 }

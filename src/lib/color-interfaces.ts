@@ -1,54 +1,14 @@
-export interface ColorNames {
-    colors: Array<{
-        name: string;
-        r: number;
-        g: number;
-        b: number;
-        hex: string;
-        h: number;
-        s: number;
-        l: number;
-    }>;
-}
-
-export interface RGBColor {
-    r: number;
-    g: number;
-    b: number;
-    is_fraction?: boolean;
-}
-
-export interface HSLColor {
-    h: number;
-    s: number;
-    l: number;
-    is_fraction?: boolean;
-}
-
-export interface HSVColor {
-    h: number;
-    s: number;
-    v: number;
-    is_fraction?: boolean;
-}
-
-export interface CMYKColor {
-    c: number;
-    m: number;
-    y: number;
-    k: number;
-    is_fraction?: boolean;
-}
-
 export interface ColorInput {
-    rgb?: RGBColor;
-    hex?: string;
-    hsl?: HSLColor;
-    hsv?: HSVColor;
-    cmyk?: CMYKColor;
+    color: string;
 }
 
 export interface ColorOutput {
+    minified: string;
+    hue: number;
+    brightness: number;
+    isLight: boolean;
+    isDark: boolean;
+    luminance: number;
     hex: {
         value: string;
         clean: string;
@@ -57,6 +17,7 @@ export interface ColorOutput {
         r: number;
         g: number;
         b: number;
+        a: number;
         value: string;
         fraction: {
             r: number;
@@ -68,6 +29,7 @@ export interface ColorOutput {
         h: number;
         s: number;
         l: number;
+        a: number;
         value: string;
         fraction: {
             h: number;
@@ -103,30 +65,15 @@ export interface ColorOutput {
         X: number;
         Y: number;
         Z: number;
-        value: string;
-        fraction: {
-            X: number;
-            Y: number;
-            Z: number;
-        };
+        A: number;
     };
     name: {
-        value: string;
-        closest_named_hex: string;
+        value?: string;
+        closest_named_hex?: string;
         exact_match_name: boolean;
-        distance: number;
     };
     contrast: {
         value: string;
+        contrast: number;
     };
-    image: {
-        bare: string;
-        named: string;
-    };
-    _links: {
-        self: {
-            href: string;
-        };
-    };
-    _embedded: Record<string, any>;
 }
