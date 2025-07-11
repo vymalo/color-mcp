@@ -1,10 +1,10 @@
 import '../lib/color-extends';
-import {registerColorInfoTools} from "./color-info-tools";
-import {registerColorSchemeTools} from "./color-scheme-tools";
-import {registerSvgGenerationTools} from "./svg-generation-tools";
-import {registerColorTools} from "./color-tools";
+import { registerColorAnalysisTools } from './organized/color-analysis';
+import { registerColorManipulationTools } from './organized/color-manipulation';
+import { registerColorSchemeGenerationTools } from './organized/color-scheme-generation';
+import { registerOutputGenerationTools } from './organized/output-generation';
 
-registerColorInfoTools();
-registerColorSchemeTools();
-registerSvgGenerationTools();
-registerColorTools();
+registerColorManipulationTools();
+registerColorSchemeGenerationTools();
+registerColorAnalysisTools();
+registerOutputGenerationTools();
