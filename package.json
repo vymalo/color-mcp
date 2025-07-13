@@ -1,6 +1,6 @@
 {
   "name": "@vymalo/color-mcp",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "A comprehensive color manipulation and scheme generation library.",
   "keywords": [
     "color",
@@ -22,7 +22,7 @@
     "build"
   ],
   "bin": {
-    "vymalo-color-mcp": "build/main.js"
+    "vymalo-color-mcp": "build/start.sh"
   },
   "repository": {
     "type": "git",
@@ -39,7 +39,7 @@
     "watch:types": "tsc --project tsconfig.json --watch",
     "watch": "concurrently -k \"npm:watch:*\"",
     "inspector": "DANGEROUSLY_OMIT_AUTH=true mcp-inspector -- node ./build/main.js --debug",
-    "postinstall": "husky",
+    "prepare": "husky",
     "prepublishOnly": "node scripts/remove-husky-script.js"
   },
   "dependencies": {
