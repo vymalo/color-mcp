@@ -1988,6 +1988,8 @@ __metadata:
     seedrandom: "npm:^3.0.5"
     typescript: "npm:^5.8.3"
     zod: "npm:3"
+  bin:
+    start: ./build/main.js
   languageName: unknown
   linkType: soft
 
