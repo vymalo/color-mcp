@@ -1,6 +1,6 @@
 {
   "name": "@vymalo/color-mcp",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A comprehensive color manipulation and scheme generation library.",
   "keywords": [
     "color",
@@ -23,7 +23,7 @@
     "bin"
   ],
   "bin": {
-    "start": "./build/main.js"
+    "vymalo-color-mcp": "./build/main.js"
   },
   "repository": {
     "type": "git",
